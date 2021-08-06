@@ -5,6 +5,7 @@ Works with Qt 5.x. Tested with Qt 5.9.8, 5.13.2 and XCode 11.
 
 ## Supported Qt Objects:
 **Types added via QtFormatters.py**
+* QMap
 * QString
 * QUrl
 * QList
@@ -12,6 +13,7 @@ Works with Qt 5.x. Tested with Qt 5.9.8, 5.13.2 and XCode 11.
 * QPointer
 
 **Types added via QtFormatters.lldb (summary-strings)**
+* QMap
 * QSize
 * QSizeF
 * QPoint
@@ -76,3 +78,5 @@ Notable projects are shown below, with the earliest project last.
 | [https://github.com/pavolmarkovic-serato/lldb-qt-formatters] | 2016-12-12 | 2016-12-12 | Direct fork of LukeWorth, including commit history | 
 | [https://github.com/ivany4/lldb-qt] | 2016-02-25 | 2016-02-25 | Works with Qt4, same code, different attribution | 
 | [https://bitbucket.org/lukeworth/lldb-qt-formatters/src/default/] | 2015-10-16 | 2015-10-16 | Apears to be earliest version of this code | 
+
+QMap provider implementation: https://github.com/sdonegan/Qt5DataFormatters
