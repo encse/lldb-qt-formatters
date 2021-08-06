@@ -7,6 +7,11 @@ type synthetic add -x "^.*QList<.+>$" -l QtFormatters.QList_SyntheticProvider
 type summary add -x "^.*QList<.+>$" -e -s "size=${svar%#}"
 type synthetic add -x "^.*QPointer<.+>$" -l QtFormatters.QPointer_SyntheticProvider
 type summary add -x "^.*QPointer<.+>$" -e -s "filled="${svar%#}"
+
+
+type synthetic add -x "^.*QMap<.+, .+>$" -l QtFormatters.QMap_SyntheticProvider 
+type summary add -x "^.*QMap<.+, .+>$" -e -s "size=${svar%#}"
+
 # summary only types 
 type summary add --summary-string "(w=${var.wd}, h=${var.ht})" QSize
 type summary add --summary-string "(w=${var.wd}, h=${var.ht})" QSizeF

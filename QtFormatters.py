@@ -158,3 +158,113 @@ class QPointer_SyntheticProvider:
             printException()
             return None
 
+
+
+
+class QMap_SyntheticProvider:
+    def __init__(self, valobj, dict):
+        self.valobj = valobj
+        self.garbage = False
+        self.root_node = None
+        self.header = None
+        self.data_type = None
+
+    def num_children(self):
+        return self.valobj.GetChildMemberWithName('d').GetChildMemberWithName('size').GetValueAsUnsigned(0)
+
+    def get_child_index(self, name):
+        try:
+            return int(name.lstrip('[').rstrip(']'))
+        except:
+            return -1
+
+    def get_child_at_index(self, index):
+        if index < 0:
+            return None
+        if index >= self.num_children():
+            return None
+        if self.garbage:
+            return None
+        try:
+            offset = index
+            current = self.header
+            while offset > 0:
+                current = self.increment_node(current)
+                offset -= 1
+            child_data = current.Dereference().Cast(self.data_type).GetData()
+            return current.CreateValueFromData('[' + str(index) + ']', child_data, self.data_type)
+        except:
+            return None
+
+    def extract_type(self):
+        map_type = self.valobj.GetType().GetUnqualifiedType()
+        target = self.valobj.GetTarget()
+        if map_type.IsReferenceType():
+            map_type = map_type.GetDereferencedType()
+        if map_type.GetNumberOfTemplateArguments() > 0:
+            first_type = map_type.GetTemplateArgumentType(0)
+            second_type = map_type.GetTemplateArgumentType(1)
+            close_bracket = '>'
+            if second_type.GetNumberOfTemplateArguments() > 0:
+                close_bracket = ' >'
+            data_type = target.FindFirstType(
+                'QMapNode<' + first_type.GetName() + ', ' + second_type.GetName() + close_bracket)
+        else:
+            data_type = None
+        return data_type
+
+    def node_ptr_value(self, node):
+        return node.GetValueAsUnsigned(0)
+
+    def right(self, node):
+        return node.GetChildMemberWithName('right')
+
+    def left(self, node):
+        return node.GetChildMemberWithName('left')
+
+    def parent(self, node):
+        parent = node.GetChildMemberWithName('p')
+        parent_val = parent.GetValueAsUnsigned(0)
+        parent_mask = parent_val & ~3
+        parent_data = lldb.SBData.CreateDataFromInt(parent_mask)
+        return node.CreateValueFromData('parent', parent_data, node.GetType())
+
+    def increment_node(self, node):
+        max_steps = self.num_children()
+        if self.node_ptr_value(self.right(node)) != 0:
+            x = self.right(node)
+            max_steps -= 1
+            while self.node_ptr_value(self.left(x)) != 0:
+                x = self.left(x)
+                max_steps -= 1
+                if max_steps <= 0:
+                    self.garbage = True
+                    return None
+            return x
+        else:
+            x = node
+            y = self.parent(x)
+            max_steps -= 1
+            while self.node_ptr_value(x) == self.node_ptr_value(self.right(y)):
+                x = y
+                y = self.parent(y)
+                max_steps -= 1
+                if max_steps <= 0:
+                    self.garbage = True
+                    return None
+            if self.node_ptr_value(self.right(x)) != self.node_ptr_value(y):
+                x = y
+            return x
+
+    def update(self):
+        try:
+            self.garbage = False
+            self.root_node = self.valobj.GetChildMemberWithName('d').GetChildMemberWithName(
+                'header').GetChildMemberWithName('left')
+            self.header = self.valobj.GetChildMemberWithName('d').GetChildMemberWithName('mostLeftNode')
+            self.data_type = self.extract_type()
+        except:
+            pass
+
+    def has_children(self):
+        return True
